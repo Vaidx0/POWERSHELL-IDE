@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerShell ISE Web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(180deg, #2d2d30 0%, #1e1e1e 100%);
+            padding: 12px 20px;
+            border-bottom: 2px solid #007acc;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007acc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo::before {
+            content: "PS>";
+            background: #007acc;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #0e639c 0%, #007acc 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(180deg, #1177bb 0%, #0e8ce0 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 122, 204, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-clear {
+            background: linear-gradient(180deg, #c42b1c 0%, #a52814 100%);
+        }
+
+        .btn-clear:hover {
+            background: linear-gradient(180deg, #d83b2b 0%, #c42b1c 100%);
+            box-shadow: 0 4px 8px rgba(196, 43, 28, 0.3);
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #3c3c3c;
+        }
+
+        .panel-header {
+            background: linear-gradient(180deg, #2d2d30 0%, #252526 100%);
+            padding: 10px 15px;
+            color: #cccccc;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 1px solid #3c3c3c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header::before {
+            content: "●";
+            color: #007acc;
+            font-size: 16px;
+        }
+
+        .editor-panel {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .console-panel {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #editor {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+            tab-size: 4;
+        }
+
+        #editor::-webkit-scrollbar,
+        #console::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #editor::-webkit-scrollbar-track,
+        #console::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        #editor::-webkit-scrollbar-thumb,
+        #console::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 6px;
+        }
+
+        #editor::-webkit-scrollbar-thumb:hover,
+        #console::-webkit-scrollbar-thumb:hover {
+            background: #4e4e4e;
+        }
+
+        #console {
+            flex: 1;
+            background: #0c0c0c;
+            color: #cccccc;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output-line {
+            margin: 4px 0;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .prompt {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #f48771;
+            background: rgba(244, 135, 113, 0.1);
+            padding: 8px;
+            border-left: 3px solid #f48771;
+            margin: 8px 0;
+        }
+
+        .success {
+            color: #4ec9b0;
+        }
+
+        .warning {
+            color: #dcdcaa;
+        }
+
+        .info {
+            color: #9cdcfe;
+        }
+
+        .resize-handle {
+            height: 8px;
+            background: linear-gradient(180deg, #2d2d30 0%, #1e1e1e 100%);
+            cursor: ns-resize;
+            position: relative;
+            border-top: 1px solid #3c3c3c;
+            border-bottom: 1px solid #3c3c3c;
+        }
+
+        .resize-handle:hover {
+            background: #007acc;
+        }
+
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 3px;
+            background: #5a5a5a;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">PowerShell ISE</div>
+        <button class="btn" onclick="executeScript()">
+            ▶ Exécuter (F5)
+        </button>
+        <button class="btn-clear btn" onclick="clearConsole()">
+            ✕ Effacer Console
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="panel editor-panel">
+            <div class="panel-header">Script PowerShell</div>
+            <textarea id="editor" placeholder="# Entrez votre script PowerShell ici...
+# Exemple:
+Write-Host 'Bonjour depuis PowerShell ISE Web!' -ForegroundColor Green
+Get-Date
+$nom = 'Utilisateur'
+Write-Host 'Bienvenue $nom' -ForegroundColor Cyan"></textarea>
+        </div>
+
+        <div class="resize-handle" id="resizeHandle"></div>
+
+        <div class="panel console-panel">
+            <div class="panel-header">Console</div>
+            <div id="console"></div>
+        </div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const consoleEl = document.getElementById('console');
+        let commandHistory = [];
+
+        // Simulation d'exécution PowerShell
+        function executeScript() {
+            const script = editor.value.trim();
+            
+            if (!script) {
+                addOutput('Aucun script à exécuter.', 'warning');
+                return;
+            }
+
+            addOutput(`PS C:\\Users> # Exécution du script...`, 'prompt');
+            
+            // Simuler l'exécution ligne par ligne
+            const lines = script.split('\n');
+            let delay = 0;
+
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    processLine(line.trim());
+                    
+                    // Message de fin
+                    if (index === lines.length - 1) {
+                        setTimeout(() => {
+                            addOutput('\n✓ Script exécuté avec succès', 'success');
+                        }, 100);
+                    }
+                }, delay);
+                delay += 50;
+            });
+        }
+
+        function processLine(line) {
+            if (!line || line.startsWith('#')) {
+                if (line.startsWith('#')) {
+                    addOutput(line, 'info');
+                }
+                return;
+            }
+
+            // Simulation de commandes PowerShell courantes
+            if (line.includes('Write-Host')) {
+                const match = line.match(/Write-Host\s+['"](.+?)['"]/);
+                if (match) {
+                    const colorMatch = line.match(/-ForegroundColor\s+(\w+)/);
+                    const color = colorMatch ? colorMatch[1].toLowerCase() : 'white';
+                    addOutput(match[1], color === 'green' ? 'success' : color === 'cyan' ? 'info' : 'default');
+                }
+            } else if (line.includes('Get-Date')) {
+                addOutput(new Date().toLocaleString('fr-FR'), 'success');
+            } else if (line.includes('Get-Location') || line === 'pwd') {
+                addOutput('C:\\Users\\PowerShell', 'success');
+            } else if (line.includes('Get-Process')) {
+                addOutput('Simulation de processus en cours...', 'info');
+                addOutput('chrome.exe        12345   234 MB', 'default');
+                addOutput('powershell.exe     5678    45 MB', 'default');
+            } else if (line.match(/^\$\w+\s*=/)) {
+                const varMatch = line.match(/^\$(\w+)\s*=\s*['"]?(.+?)['"]?$/);
+                if (varMatch) {
+                    addOutput(`Variable $${varMatch[1]} = ${varMatch[2]}`, 'info');
+                }
+            } else if (line.includes('Get-Help')) {
+                addOutput('Aide PowerShell - Documentation disponible', 'info');
+            } else if (line.toLowerCase().includes('error')) {
+                addOutput(`Erreur: ${line}`, 'error');
+            } else {
+                addOutput(`> ${line}`, 'default');
+            }
+        }
+
+        function addOutput(text, type = 'default') {
+            const line = document.createElement('div');
+            line.className = `output-line ${type}`;
+            line.textContent = text;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleEl.innerHTML = '';
+            addOutput('Console effacée.', 'info');
+        }
+
+        // Raccourci clavier F5
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F5') {
+                e.preventDefault();
+                executeScript();
+            }
+        });
+
+        // Gestion du redimensionnement
+        const resizeHandle = document.getElementById('resizeHandle');
+        let isResizing = false;
+
+        resizeHandle.addEventListener('mousedown', () => {
+            isResizing = true;
+            document.body.style.cursor = 'ns-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            const container = document.querySelector('.container');
+            const editorPanel = document.querySelector('.editor-panel');
+            const rect = container.getBoundingClientRect();
+            const percentage = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            if (percentage > 20 && percentage < 80) {
+                editorPanel.style.flex = `0 0 ${percentage}%`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // Message de bienvenue
+        addOutput('═══════════════════════════════════════════════════', 'info');
+        addOutput('  PowerShell ISE Web - Environnement de script', 'success');
+        addOutput('═══════════════════════════════════════════════════', 'info');
+        addOutput('\nAppuyez sur F5 ou cliquez sur "Exécuter" pour lancer votre script.\n', 'default');
+    </script>
+</body>
+</html>
