@@ -497,11 +497,11 @@
     </div>
 
     <script>
-        const bookISBNs = [
-            "9782081248717",  // Cyrano de Bergerac
-            "9782081226340",  // On ne badine pas avec l'amour
-            "9782081256897",  // Lettres d'une Péruvienne
-            "9782253012344"   // La Controverse de Valladolid
+        const myBooks = [
+            { title: "Cyrano de Bergerac", author: "Edmond Rostand", isbn: "9782070409310" },
+            { title: "On ne badine pas avec l'amour", author: "Alfred de Musset", isbn: "9782080444820" },
+            { title: "Lettres d'une Péruvienne", author: "Françoise de Graffigny", isbn: "9782080452191" },
+            { title: "La Controverse de Valladolid", author: "Jean-Claude Carrière", isbn: "9782080721648" }
         ];
 
         let books = [];
@@ -532,13 +532,22 @@
 
         async function loadAllBooks() {
             const grid = document.getElementById('booksGrid');
-            grid.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement des livres...</div>';
+            grid.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement de vos livres...</div>';
             
             books = [];
-            for (const isbn of bookISBNs) {
-                const book = await fetchBookByISBN(isbn);
+            for (const myBook of myBooks) {
+                const book = await fetchBookByISBN(myBook.isbn);
                 if (book) {
                     books.push(book);
+                } else {
+                    // Si l'API ne trouve pas, on utilise les infos de base
+                    books.push({
+                        title: myBook.title,
+                        author: myBook.author,
+                        isbn: myBook.isbn,
+                        cover: null,
+                        preview: null
+                    });
                 }
             }
             
@@ -548,7 +557,7 @@
         function renderBooks() {
             const grid = document.getElementById('booksGrid');
             if (books.length === 0) {
-                grid.innerHTML = '<div class="error-message">Impossible de charger les livres. Vérifiez votre connexion internet.</div>';
+                grid.innerHTML = '<div class="error-message">Impossible de charger vos livres. Vérifiez votre connexion internet.</div>';
                 return;
             }
             
@@ -573,13 +582,16 @@
                     <h3 style="color: #fafafa; margin-bottom: 12px; font-size: 18px;">${currentBook.title}</h3>
                     <p style="color: #a1a1aa; margin-bottom: 20px;">par ${currentBook.author}</p>
                     <p style="color: #e4e4e7; line-height: 1.8; margin-bottom: 16px;">
-                        Ce livre fait partie de votre programme de BAC Français. 
+                        Ce livre fait partie de votre programme de BAC Français 2025.
+                    </p>
+                    <p style="color: #a1a1aa; line-height: 1.6; font-size: 14px;">
+                        📖 ISBN: ${currentBook.isbn}
                     </p>
                     ${currentBook.preview ? 
                         `<a href="${currentBook.preview}" target="_blank" style="display: inline-block; padding: 12px 24px; background: #fafafa; color: #0f0f0f; text-decoration: none; border-radius: 6px; font-weight: 500; margin-top: 12px;">
                             Voir sur Open Library →
                         </a>` : 
-                        '<p style="color: #71717a; font-style: italic;">Aperçu non disponible</p>'
+                        '<p style="color: #71717a; font-style: italic; margin-top: 16px;">Aperçu non disponible</p>'
                     }
                 </div>
             `;
